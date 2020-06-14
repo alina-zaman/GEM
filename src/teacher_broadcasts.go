@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -44,7 +45,6 @@ func insert_problem(uid int, problem *ProblemInfo) {
 			problem.Merit,
 			problem.Effort,
 			problem.Attempts,
-			problem.Topic_id,
 			int(tagID),
 			time.Now(),
 		)
@@ -59,6 +59,15 @@ func insert_problem(uid int, problem *ProblemInfo) {
 			Active:   true,
 			Attempts: make(map[int]int),
 		}
+		for _, tpid := range problem.Topic_id {
+			_, err := AddProblemTopicSQL.Exec(
+				problem.Pid,
+				tpid,
+			)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 }
 
@@ -71,11 +80,12 @@ func teacher_broadcastsHandler(w http.ResponseWriter, r *http.Request, who strin
 	merit, _ := strconv.Atoi(r.FormValue("merit"))
 	effort, _ := strconv.Atoi(r.FormValue("effort"))
 	attempts, _ := strconv.Atoi(r.FormValue("attempts"))
-	topic_id, _ := strconv.Atoi(r.FormValue("topic_id"))
+	var topic_id []int
+	json.Unmarshal([]byte(r.FormValue("topic_id")), &topic_id)
 	tag := r.FormValue("tag")
 	filename := r.FormValue("filename")
 	exact_answer := r.FormValue("exact_answer")
-
+	//fmt.Println(topic_id)
 	// fmt.Printf("%d,Answer:%s, Merit:%d, Effort:%d, Attempts:%d, Tag:%s, Filename:%s\n", len(content), answer, merit, effort, attempts, tag, filename)
 
 	problem := &ProblemInfo{
@@ -85,7 +95,7 @@ func teacher_broadcastsHandler(w http.ResponseWriter, r *http.Request, who strin
 		Merit:       merit,
 		Effort:      effort,
 		Attempts:    attempts,
-		Topic_id:	topic_id,
+		Topic_id:    topic_id,
 		Tag:         tag,
 		ExactAnswer: exact_answer == "True",
 	}

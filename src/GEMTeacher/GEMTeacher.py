@@ -81,7 +81,7 @@ def gemt_get_problem_info(fname):
 	if len(items)==0 or (not items[0].startswith('#') and not items[0].startswith('//')):
 		return content, '', 0, 0, 0, 0, '', basename, False
 
-	merit, effort, attempts, topic_id, tag, exact_answer = 0, 0, 0, 0, '', True
+	merit, effort, attempts, topic_ids, tag, exact_answer = 0, 0, 0, [], '', True
 	first_line, body = items[0], items[1]
 	if first_line.startswith('#'):
 		prefix = '#'
@@ -90,8 +90,10 @@ def gemt_get_problem_info(fname):
 		prefix = '//'
 		first_line = first_line.strip('/ ')
 	try:
-		items = re.match('(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(\s+(\w.*))?', first_line).groups()
-		merit, effort, attempts, topic_id, tag = int(items[0]), int(items[1]), int(items[2]), int(items[3]), items[5]
+		first_part, second_part = first_line.split('Topics:')
+		items = re.match('(\d+)\s+(\d+)\s+(\d+)(\s+(\w.*))?', first_part).groups()
+		merit, effort, attempts, tag = int(items[0]), int(items[1]), int(items[2]), items[4]
+		topic_ids = list(map(int, second_part.strip().split()))
 		if tag is None:
 			tag = ''
 		tag = tag.strip()
@@ -123,7 +125,7 @@ def gemt_get_problem_info(fname):
 	# 	body += '\n{} '.format(gemtAnswerTag)
 	# 	answer = items[1].strip()
 
-	return body, answer, merit, effort, attempts, topic_id, tag, basename, exact_answer
+	return body, answer, merit, effort, attempts, topic_ids, tag, basename, exact_answer
 
 
 # ------------------------------------------------------------------
@@ -133,14 +135,14 @@ class gemtShare(sublime_plugin.TextCommand):
 		if fname is None:
 			sublime.message_dialog('Content must be saved first.')
 			return
-		content, answer, merit, effort, attempts, topic_id, tag, name, exact_answer = gemt_get_problem_info(fname)
+		content, answer, merit, effort, attempts, topic_ids, tag, name, exact_answer = gemt_get_problem_info(fname)
 		data = {
 			'content': 		content,
 			'answer':		answer,
 			'merit':		merit,
 			'effort':		effort,
 			'attempts':		attempts,
-			'topic_id':		topic_id,
+			'topic_id':		topic_ids,
 			'tag':			tag,
 			'filename':		name,
 			'exact_answer':	exact_answer,
